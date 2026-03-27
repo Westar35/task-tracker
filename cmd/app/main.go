@@ -1,9 +1,9 @@
 package main
 
 import (
-	//"task-tracker/internal/httpserver"
+	"fmt"
 )
 
 func main() {
-	//httpserver.StartHttpServer()
+	fmt.Println("Hello, World!")
 }
