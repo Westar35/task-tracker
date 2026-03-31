@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"net/http"
-	"fmt"
+	//"fmt"
 )
 
 type Task struct {
@@ -14,16 +14,9 @@ type Task struct {
 func TasksHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		tasks := []Task{
-			{ID: 1, Title: "Task 1"},
-		}
-		json.NewEncoder(w).Encode(tasks)
-		//GetTasksHandler(w, r)
+		getTasksHandler(w, r)
 	case http.MethodPost:
-		var task Task
-		json.NewDecoder(r.Body).Decode(&task)
-		fmt.Fprintf(w, "Создана задача: %s", task.Title)
-		//CreateTaskHandler(w, r)
+		createTaskHandler(w, r)
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
