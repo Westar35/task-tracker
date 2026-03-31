@@ -1,7 +1,7 @@
 package server
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"task-tracker/internal/server/handlers"
@@ -17,7 +17,7 @@ func Run() error{
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
-		return errors.New("Error starting server")
+		return fmt.Errorf("start server %w", err)
 	}
 	return nil
 }

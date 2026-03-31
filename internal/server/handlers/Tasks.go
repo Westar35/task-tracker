@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	//"encoding/json"
 	"net/http"
-	//"fmt"
 )
 
 type Task struct {
