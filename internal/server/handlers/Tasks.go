@@ -9,7 +9,14 @@ import (
 type Task struct {
 	ID    int    `json:"id"`
 	Title string `json:"title"`
+	Done  bool   `json:"done"`
 }
+
+type CreateTaskRequest struct {
+	Title string `json:"title"`
+}
+
+var tasks = []Task{}
 
 func TasksHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {

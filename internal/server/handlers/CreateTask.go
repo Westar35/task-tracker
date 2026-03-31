@@ -1,13 +1,32 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
-	"fmt"
 )
+
+var nextID int = 1
 
 func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
-	fmt.Fprintf(w, "Заглушка: POST создание задачи")
+	var req CreateTaskRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if req.Title == "" {
+		http.Error(w, "Title is required", http.StatusBadRequest)
+		return
+	}
+	task := Task{
+		ID:    nextID,
+		Title: req.Title,
+		Done:  false,
+	}
+	nextID++
+	tasks = append(tasks, task)
+	w.Header().Set("Content-Type", "application/json")
 }
