@@ -52,7 +52,7 @@ func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		h.getTaskByID(w, r)
 	case http.MethodPut:
-		//h.updateTask(w, r)
+		h.updateTaskById(w, r)
 	case http.MethodDelete:
 		h.deleteTaskById(w, r)
 	default:
@@ -124,4 +124,23 @@ func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *TaskHandler) updateTaskById(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	id := getIDFromPath(r)
+	req := models.UpdateTaskRequest{}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	err2 := h.taskPointer.UpdateTask(id, req)
+	if err2 != nil {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	}
 }

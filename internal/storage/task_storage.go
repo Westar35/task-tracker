@@ -36,9 +36,9 @@ func (s *TaskStorage) GetTaskByID(id int) (models.Task, error) {
 
 func (s *TaskStorage) CreateTask(title string) models.Task {
 	task := models.Task{
-		ID:    s.nextID,
-		Title: title,
-		Done:  false,
+		ID:     s.nextID,
+		Title:  title,
+		Status: false,
 	}
 	s.tasks = append(s.tasks, task)
 	s.nextID++
@@ -56,6 +56,13 @@ func (s *TaskStorage) DeleteTask(id int) error {
 	return fmt.Errorf("task not found")
 }
 
-func (s *TaskStorage) UpdateTask(id int, title string) error {
-	return nil
+func (s *TaskStorage) UpdateTask(id int, req models.UpdateTaskRequest) error {
+	for i, task := range s.tasks {
+		if task.ID == id {
+			s.tasks[i].Title = req.Title
+			s.tasks[i].Status = req.Status
+			return nil
+		}
+	}
+	return fmt.Errorf("task not found")
 }
