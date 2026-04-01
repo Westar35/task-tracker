@@ -75,6 +75,9 @@ func (h *TaskHandler) getAllTasks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode tasks", http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(h.taskPointer.GetAllTasks())
 }
 
 func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
@@ -100,6 +103,9 @@ func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(task)
 }
 
 /*
@@ -122,6 +128,9 @@ func (h *TaskHandler) getTaskByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(task)
 }
 
 func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
