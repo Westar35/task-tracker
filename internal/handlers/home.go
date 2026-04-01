@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"fmt"
+	"encoding/json"
+	"task-tracker/internal/storage"
 )
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Server is running")
+	json.NewEncoder(w).Encode(storage.NewHome())
+	w.WriteHeader(http.StatusOK)
 }

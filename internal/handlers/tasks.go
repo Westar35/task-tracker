@@ -66,10 +66,21 @@ func TaskByIDHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTaskByIDHandler(w http.ResponseWriter, r *http.Request, id int) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	task, err := taskStorage.GetTaskByID(id)
 	if err != nil {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
 	json.NewEncoder(w).Encode(task)
+}
+
+func DeleteTaskByIDHandler(w http.ResponseWriter, r *http.Request, id int) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
 }
