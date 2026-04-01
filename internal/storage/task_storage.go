@@ -1,15 +1,17 @@
 package storage
 
 import (
-	"task-tracker/internal/models"
 	"fmt"
+	"task-tracker/internal/models"
 )
 
+// TaskStorage представляет срез задач и следующий ID для новой задачи.
 type TaskStorage struct {
 	tasks  []models.Task
 	nextID int
 }
 
+// NewTaskStorage создает новый экземпляр TaskStorage с инициализированными полями.
 func NewTaskStorage() *TaskStorage {
 	return &TaskStorage{
 		tasks:  []models.Task{},
@@ -17,6 +19,7 @@ func NewTaskStorage() *TaskStorage {
 	}
 }
 
+// GetAllTasks возвращает все задачи из хранилища.
 func (s *TaskStorage) GetAllTasks() []models.Task {
 	return s.tasks
 }

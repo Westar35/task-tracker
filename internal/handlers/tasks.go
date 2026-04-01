@@ -1,17 +1,39 @@
 package handlers
 
 import (
-	"net/http"
-	"task-tracker/internal/storage"
-	"task-tracker/internal/models"
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"strings"
+	"task-tracker/internal/models"
+	"task-tracker/internal/storage"
 )
 
+type TaskHandler struct {
+	storage *storage.TaskStorage
+}
+
+func NewTaskHandler(taskStorage *storage.TaskStorage) *TaskHandler {
+	return &TaskHandler{
+		storage: taskStorage,
+	}
+}
+
+// Нужно перенести инициализацию в run() и передавать в tasks.go
 var taskStorage = storage.NewTaskStorage()
 
 func TasksHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		getTasksHandler(w, r)
+	case http.MethodPost:
+		createTaskHandler(w, r)
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *TaskHandler) Tasks(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		getTasksHandler(w, r)

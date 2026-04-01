@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"task-tracker/internal/handlers"
+	"task-tracker/internal/storage"
 )
 
-func Run() error{
+func Run() error {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
+
+	taskStorage := storage.NewTaskStorage()
+	taskHandler := handlers.NewTaskHandler(taskStorage)
+
+	registerRoutes(mux, taskHandler)
 
 	log.Println("Starting server on port :8080")
 
