@@ -45,8 +45,15 @@ func (s *TaskStorage) CreateTask(title string) models.Task {
 	return task
 }
 
+// После удаления id могут ломаться
 func (s *TaskStorage) DeleteTask(id int) error {
-	return nil
+	for i, task := range s.tasks {
+		if task.ID == id {
+			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("task not found")
 }
 
 func (s *TaskStorage) UpdateTask(id int, title string) error {
