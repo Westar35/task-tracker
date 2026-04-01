@@ -34,14 +34,15 @@ func (s *TaskStorage) GetTaskByID(id int) (models.Task, error) {
 	return models.Task{}, fmt.Errorf("task not found")
 }
 
-func (s *TaskStorage) CreateTask() {
+func (s *TaskStorage) CreateTask(title string) models.Task {
 	task := models.Task{
 		ID:    s.nextID,
-		Title: "New Task",
+		Title: title,
 		Done:  false,
 	}
 	s.tasks = append(s.tasks, task)
 	s.nextID++
+	return task
 }
 
 func (s *TaskStorage) DeleteTask(id int) error {
