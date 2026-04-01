@@ -7,12 +7,12 @@ import (
 )
 
 type TaskHandler struct {
-	storage *storage.TaskStorage
+	taskPointer *storage.TaskStorage
 }
 
 func NewTaskHandler(taskStorage *storage.TaskStorage) *TaskHandler {
 	return &TaskHandler{
-		storage: taskStorage,
+		taskPointer: taskStorage,
 	}
 }
 
@@ -20,6 +20,8 @@ func (h *TaskHandler) Tasks(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		h.getAllTasks(w, r)
+	case http.MethodPost:
+		h.createTask(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -30,7 +32,14 @@ func (h *TaskHandler) getAllTasks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	json.NewEncoder(w).Encode(h)
+	json.NewEncoder(w).Encode(h.taskPointer.GetAllTasks())
 }
 
-//123456
+func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	h.taskPointer.CreateTask()
+	json.NewEncoder(w).Encode(h)
+}
