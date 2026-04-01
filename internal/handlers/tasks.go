@@ -34,6 +34,8 @@ func getIDFromPath(r *http.Request) int {
 	return taskID
 }
 
+// В функцию getIDFromPath добавить обработку ошибок.
+
 // TasksHandler - метод для обработки HTTP-запросов на эндпоинте /tasks.
 func (h *TaskHandler) TasksHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -118,6 +120,8 @@ func (h *TaskHandler) getTaskByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 	err2 := json.NewEncoder(w).Encode(task)
 	if err2 != nil {
 		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
@@ -136,7 +140,6 @@ func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusNoContent)
 }
 
