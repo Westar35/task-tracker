@@ -24,7 +24,6 @@ func (s *TaskStorage) GetAllTasks() []models.Task {
 	return s.tasks
 }
 
-// Не реализовано
 func (s *TaskStorage) GetTaskByID(id int) (models.Task, error) {
 	for _, task := range s.tasks {
 		if task.ID == id {
@@ -45,7 +44,6 @@ func (s *TaskStorage) CreateTask(title string) models.Task {
 	return task
 }
 
-// После удаления id могут ломаться
 func (s *TaskStorage) DeleteTask(id int) error {
 	for i, task := range s.tasks {
 		if task.ID == id {
@@ -56,13 +54,13 @@ func (s *TaskStorage) DeleteTask(id int) error {
 	return fmt.Errorf("task not found")
 }
 
-func (s *TaskStorage) UpdateTask(id int, req models.UpdateTaskRequest) error {
+func (s *TaskStorage) UpdateTask(id int, req models.UpdateTaskRequest) (models.Task, error) {
 	for i, task := range s.tasks {
 		if task.ID == id {
 			s.tasks[i].Title = req.Title
 			s.tasks[i].Status = req.Status
-			return nil
+			return s.tasks[i], nil
 		}
 	}
-	return fmt.Errorf("task not found")
+	return models.Task{}, fmt.Errorf("task not found")
 }

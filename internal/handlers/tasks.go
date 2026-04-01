@@ -11,13 +11,13 @@ import (
 
 // TaskHandler - структура для хранения ссылки на TaskStorage и обработки HTTP-запросов, связанных с задачами.
 type TaskHandler struct {
-	taskPointer *storage.TaskStorage
+	taskStorage *storage.TaskStorage
 }
 
 // NewTaskHandler - конструктор для создания нового экземпляра TaskHandler с переданной ссылкой на TaskStorage.
 func NewTaskHandler(taskStorage *storage.TaskStorage) *TaskHandler {
 	return &TaskHandler{
-		taskPointer: taskStorage,
+		taskStorage: taskStorage,
 	}
 }
 
@@ -70,14 +70,12 @@ func (h *TaskHandler) getAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	err := json.NewEncoder(w).Encode(h.taskPointer.GetAllTasks())
+	w.WriteHeader(http.StatusOK)
+	err := json.NewEncoder(w).Encode(h.taskStorage.GetAllTasks())
 	if err != nil {
 		http.Error(w, "Failed to encode tasks", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(h.taskPointer.GetAllTasks())
 }
 
 func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +93,7 @@ func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
-	task := h.taskPointer.CreateTask(req.Title)
+	task := h.taskStorage.CreateTask(req.Title)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	err2 := json.NewEncoder(w).Encode(task)
@@ -103,9 +101,6 @@ func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(task)
 }
 
 /*
@@ -118,7 +113,7 @@ func (h *TaskHandler) getTaskByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := getIDFromPath(r)
-	task, err := h.taskPointer.GetTaskByID(id)
+	task, err := h.taskStorage.GetTaskByID(id)
 	if err != nil {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
@@ -128,9 +123,6 @@ func (h *TaskHandler) getTaskByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(task)
 }
 
 func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
@@ -139,14 +131,13 @@ func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := getIDFromPath(r)
-	err := h.taskPointer.DeleteTask(id)
+	err := h.taskStorage.DeleteTask(id)
 	if err != nil {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Task deleted successfully"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *TaskHandler) updateTaskById(w http.ResponseWriter, r *http.Request) {
@@ -165,12 +156,12 @@ func (h *TaskHandler) updateTaskById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
-	err2 := h.taskPointer.UpdateTask(id, req)
+	updateTask, err2 := h.taskStorage.UpdateTask(id, req)
 	if err2 != nil {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(req)
+	json.NewEncoder(w).Encode(updateTask)
 }

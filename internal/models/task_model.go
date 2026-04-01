@@ -4,7 +4,7 @@ package models
 type Task struct {
 	ID     int    `json:"id"`
 	Title  string `json:"title"`
-	Status bool   `json:"done"`
+	Status bool   `json:"status"`
 }
 
 // CreateTaskRequest представляет структуру запроса для создания новой задачи.
@@ -14,5 +14,5 @@ type CreateTaskRequest struct {
 
 type UpdateTaskRequest struct {
 	Title  string `json:"title"`
-	Status bool   `json:"done"`
+	Status bool   `json:"status"`
 }
