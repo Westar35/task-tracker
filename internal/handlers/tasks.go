@@ -70,7 +70,11 @@ func (h *TaskHandler) getAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	json.NewEncoder(w).Encode(h.taskPointer.GetAllTasks())
+	err := json.NewEncoder(w).Encode(h.taskPointer.GetAllTasks())
+	if err != nil {
+		http.Error(w, "Failed to encode tasks", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +95,11 @@ func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
 	task := h.taskPointer.CreateTask(req.Title)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(task)
+	err2 := json.NewEncoder(w).Encode(task)
+	if err2 != nil {
+		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
+		return
+	}
 }
 
 /*
@@ -109,7 +117,11 @@ func (h *TaskHandler) getTaskByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
-	json.NewEncoder(w).Encode(task)
+	err2 := json.NewEncoder(w).Encode(task)
+	if err2 != nil {
+		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +135,9 @@ func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Task deleted successfully"})
 }
 
 func (h *TaskHandler) updateTaskById(w http.ResponseWriter, r *http.Request) {
@@ -138,9 +152,16 @@ func (h *TaskHandler) updateTaskById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	if req.Title == "" {
+		http.Error(w, "Title is required", http.StatusBadRequest)
+		return
+	}
 	err2 := h.taskPointer.UpdateTask(id, req)
 	if err2 != nil {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(req)
 }
