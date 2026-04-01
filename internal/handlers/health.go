@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"fmt"
+	"encoding/json"
+	"task-tracker/internal/storage"
 )
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "ok")
+	json.NewEncoder(w).Encode(storage.NewHealthStorage())
+	w.WriteHeader(http.StatusOK)
 }

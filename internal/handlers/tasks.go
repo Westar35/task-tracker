@@ -5,6 +5,8 @@ import (
 	"task-tracker/internal/storage"
 	"task-tracker/internal/models"
 	"encoding/json"
+	"strconv"
+	"strings"
 )
 
 var taskStorage = storage.NewTaskStorage()
@@ -42,4 +44,32 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(taskStorage.GetAllTasks())
+}
+
+func TaskByIDHandler(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) != 3 {
+		http.Error(w, "Invalid path", http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(parts[2])
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		getTaskByIDHandler(w, r, id)
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func getTaskByIDHandler(w http.ResponseWriter, r *http.Request, id int) {
+	task, err := taskStorage.GetTaskByID(id)
+	if err != nil {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	}
+	json.NewEncoder(w).Encode(task)
 }

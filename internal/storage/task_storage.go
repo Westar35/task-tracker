@@ -2,6 +2,7 @@ package storage
 
 import (
 	"task-tracker/internal/models"
+	"fmt"
 )
 
 type TaskStorage struct {
@@ -21,8 +22,13 @@ func (s *TaskStorage) GetAllTasks() []models.Task {
 }
 
 // Не реализовано
-func (s *TaskStorage) GetTaskByID(id int) (*models.Task, error) {
-	return &models.Task{}, nil
+func (s *TaskStorage) GetTaskByID(id int) (models.Task, error) {
+	for _, task := range s.tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
+	return models.Task{}, fmt.Errorf("task not found")
 }
 
 func (s *TaskStorage) CreateTask(title string) models.Task {
@@ -35,6 +41,7 @@ func (s *TaskStorage) CreateTask(title string) models.Task {
 
 func (s *TaskStorage) AddTask(task models.Task) {
 	s.tasks = append(s.tasks, task)
+	s.nextID++
 }
 
 func (s *TaskStorage) DeleteTask(id int) error {
