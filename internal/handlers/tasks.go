@@ -2,169 +2,97 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
-	"strconv"
-	"strings"
+	"slices"
 	"task-tracker/internal/models"
-	"task-tracker/internal/storage"
+	"task-tracker/internal/storage/postgres"
 )
 
-// TaskHandler - структура для хранения ссылки на TaskStorage и обработки HTTP-запросов, связанных с задачами.
 type TaskHandler struct {
-	taskStorage *storage.TaskStorage
+	repo *postgres.TaskRepository
 }
 
-// NewTaskHandler - конструктор для создания нового экземпляра TaskHandler с переданной ссылкой на TaskStorage.
-func NewTaskHandler(taskStorage *storage.TaskStorage) *TaskHandler {
-	return &TaskHandler{
-		taskStorage: taskStorage,
-	}
+func NewTaskHandler(repo *postgres.TaskRepository) *TaskHandler {
+	return &TaskHandler{repo: repo}
 }
 
-// getIDFromPath - вспомогательная функция для извлечения ID задачи из URL-пути запроса.
-func getIDFromPath(r *http.Request) int {
-	splittedPath := strings.Split(r.URL.Path, "/")
-	if len(splittedPath) != 3 {
-		return 0
-	}
-	taskID, err := strconv.Atoi(splittedPath[2])
-	if err != nil {
-		return 0
-	}
-	return taskID
-}
-
-// В функцию getIDFromPath добавить обработку ошибок.
-
-// TasksHandler - метод для обработки HTTP-запросов на эндпоинте /tasks.
+// TasksHandler обрабатывает запросы к эндпоинту /tasks
 func (h *TaskHandler) TasksHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-	case http.MethodGet:
-		h.getAllTasks(w, r)
 	case http.MethodPost:
-		h.createTask(w, r)
+		h.CreateTask(w, r)
+	case http.MethodGet:
+		h.GetAllTasks(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-// TaskByIDHandler - метод для обработки HTTP-запросов на эндпоинте /tasks/{id}.
+// TasksByIDHandler обрабатывает запросы к эндпоинту /tasks/{id}
 func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		h.getTaskByID(w, r)
-	case http.MethodPut:
-		h.updateTaskById(w, r)
-	case http.MethodDelete:
-		h.deleteTaskById(w, r)
+		// Реализуйте логику получения задачи по ID
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 /*
-Методы для TasksHandler.
+Методы для TasksHandler
 */
 
-func (h *TaskHandler) getAllTasks(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
+	tasks, err := h.repo.GetAllTasks()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to get tasks", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	err := json.NewEncoder(w).Encode(h.taskStorage.GetAllTasks())
-	if err != nil {
-		http.Error(w, "Failed to encode tasks", http.StatusInternalServerError)
-		return
+	tasksID := make([]int, 0, len(tasks))
+	for id := range tasks {
+		tasksID = append(tasksID, id)
+	}
+	slices.Sort(tasksID)
+	for _, id := range tasksID {
+		json.NewEncoder(w).Encode(tasks[id])
 	}
 }
 
-func (h *TaskHandler) createTask(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
+	// Создаем экземпляр структуры запроса
 	var req models.CreateTaskRequest
+
+	// Декодируем JSON из тела запроса в структуру
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	// Проверяем, что заголовок не пустой
 	if req.Title == "" {
 		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
-	task := h.taskStorage.CreateTask(req.Title)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
-	err2 := json.NewEncoder(w).Encode(task)
-	if err2 != nil {
-		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
+
+	// Вызываем метод, который сохранит задачу в базе данных
+	task, err := h.repo.CreateTask(req.Title)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to create task", http.StatusInternalServerError)
 		return
 	}
+
+	// Отправляем успешный ответ
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(task)
 }
 
 /*
-Методы для getTaskByID.
+Методы для TasksByIDHandler
 */
-
-func (h *TaskHandler) getTaskByID(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	id := getIDFromPath(r)
-	task, err := h.taskStorage.GetTaskByID(id)
-	if err != nil {
-		http.Error(w, "Task not found", http.StatusNotFound)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	err2 := json.NewEncoder(w).Encode(task)
-	if err2 != nil {
-		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
-		return
-	}
-}
-
-func (h *TaskHandler) deleteTaskById(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	id := getIDFromPath(r)
-	err := h.taskStorage.DeleteTask(id)
-	if err != nil {
-		http.Error(w, "Task not found", http.StatusNotFound)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *TaskHandler) updateTaskById(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	id := getIDFromPath(r)
-	req := models.UpdateTaskRequest{}
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-	if req.Title == "" {
-		http.Error(w, "Title is required", http.StatusBadRequest)
-		return
-	}
-	updateTask, err2 := h.taskStorage.UpdateTask(id, req)
-	if err2 != nil {
-		http.Error(w, "Task not found", http.StatusNotFound)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updateTask)
-}

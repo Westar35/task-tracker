@@ -1,18 +1,19 @@
 package server
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"task-tracker/internal/handlers"
-	"task-tracker/internal/storage"
+	"task-tracker/internal/storage/postgres"
 )
 
-func Run() error {
+func Run(db *sql.DB) error {
 	mux := http.NewServeMux()
 
-	taskStorage := storage.NewTaskStorage()
-	taskHandler := handlers.NewTaskHandler(taskStorage)
+	taskRepo := postgres.NewTaskRepository(db)
+	taskHandler := handlers.NewTaskHandler(taskRepo)
 
 	registerRoutes(mux, taskHandler)
 
