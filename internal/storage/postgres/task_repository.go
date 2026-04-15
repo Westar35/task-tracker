@@ -77,13 +77,34 @@ func (r *TaskRepository) UpdateTaskByID(id int, title string, status bool) (mode
 		UPDATE tasks
 		SET title = $1, status = $2
 		WHERE id = $3
-		RETURNING id, title, status
+		RETURNING id, title, status;
 	`
 
-	//_, err := r.db.Exec(query, title, status, id)
 	err := r.db.QueryRow(query, title, status, id).Scan(&task.ID, &task.Title, &task.Status)
 	if err != nil {
 		return models.Task{}, err
 	}
 	return task, nil
+}
+
+func (r *TaskRepository) DeleteTaskByID(id int) error {
+	query := `
+		DELETE FROM tasks
+		WHERE id = $1
+	`
+
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }

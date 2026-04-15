@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -56,6 +57,13 @@ func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		h.UpdateTaskByID(id, w, r)
+	case http.MethodDelete:
+		id, err := getIDFromURL(r.URL.Path)
+		if err != nil {
+			http.Error(w, "Invalid task ID", http.StatusBadRequest)
+			return
+		}
+		h.DeleteTaskByID(id, w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -170,4 +178,24 @@ func (h *TaskHandler) UpdateTaskByID(id int, w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (h *TaskHandler) DeleteTaskByID(id int, w http.ResponseWriter, r *http.Request) {}
+func (h *TaskHandler) DeleteTaskByID(id int, w http.ResponseWriter, r *http.Request) {
+	err := h.repo.DeleteTaskByID(id)
+	if err != nil {
+		log.Println(err)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Task with current ID not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to delete task", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(map[string]string{"message": "Task deleted successfully"})
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
