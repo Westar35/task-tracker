@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"slices"
@@ -15,6 +16,15 @@ type TaskHandler struct {
 
 func NewTaskHandler(repo *postgres.TaskRepository) *TaskHandler {
 	return &TaskHandler{repo: repo}
+}
+
+func getIDFromURL(path string) (int, error) {
+	var id int
+	_, err := fmt.Sscanf(path, "/tasks/%d", &id)
+	if err != nil {
+		return 0, fmt.Errorf("invalid task ID in URL: %v", err)
+	}
+	return id, nil
 }
 
 // TasksHandler обрабатывает запросы к эндпоинту /tasks
@@ -33,7 +43,19 @@ func (h *TaskHandler) TasksHandler(w http.ResponseWriter, r *http.Request) {
 func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		// Реализуйте логику получения задачи по ID
+		id, err := getIDFromURL(r.URL.Path)
+		if err != nil {
+			http.Error(w, "Invalid task ID", http.StatusBadRequest)
+			return
+		}
+		h.GetTaskByID(id, w, r)
+	case http.MethodPut:
+		id, err := getIDFromURL(r.URL.Path)
+		if err != nil {
+			http.Error(w, "Invalid task ID", http.StatusBadRequest)
+			return
+		}
+		h.UpdateTaskByID(id, w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -43,6 +65,7 @@ func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 Методы для TasksHandler
 */
 
+// Метод GetAllTasks получает все задачи из репозитория и возвращает их в виде JSON-ответа
 func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	tasks, err := h.repo.GetAllTasks()
 	if err != nil {
@@ -62,6 +85,7 @@ func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Метод CreateTask создает новую задачу на основе данных из запроса и сохраняет ее в базе данных
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	// Создаем экземпляр структуры запроса
 	var req models.CreateTaskRequest
@@ -90,9 +114,60 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	// Отправляем успешный ответ
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(task)
+	err = json.NewEncoder(w).Encode(task)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
+		return
+	}
 }
 
 /*
 Методы для TasksByIDHandler
 */
+
+func (h *TaskHandler) GetTaskByID(id int, w http.ResponseWriter, r *http.Request) {
+	task, err := h.repo.GetTaskByID(id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Task with current ID not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(task)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to encode task", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *TaskHandler) UpdateTaskByID(id int, w http.ResponseWriter, r *http.Request) {
+	var task models.UpdateTaskRequest
+
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	updatedTask, err := h.repo.UpdateTaskByID(id, task.Title, task.Status)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to update task", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(updatedTask)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to encode updated task", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *TaskHandler) DeleteTaskByID(id int, w http.ResponseWriter, r *http.Request) {}
