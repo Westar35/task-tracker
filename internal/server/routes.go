@@ -10,4 +10,5 @@ func registerRoutes(mux *http.ServeMux, taskHandler *handlers.TaskHandler, authH
 	mux.HandleFunc("/tasks", taskHandler.TasksHandler)
 	mux.HandleFunc("/tasks/", taskHandler.TasksByIDHandler)
 	mux.HandleFunc("/auth/register", authHandler.RegisterHandler)
+	mux.HandleFunc("/auth/login", authHandler.LoginHandler)
 }
