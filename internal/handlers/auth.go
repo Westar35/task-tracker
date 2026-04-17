@@ -17,8 +17,6 @@ func NewAuthHandler(repo *postgres.UserRepository) *AuthHandler {
 	return &AuthHandler{repo: repo}
 }
 
-var jwtSecret = []byte("dev-task-tracker-secret-key-2026")
-
 func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
@@ -112,10 +110,13 @@ func (h *AuthHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := service.GenerateAccessToken(user.ID, jwtSecret)
-	log.Println("Generated JWT:", token)
+	token, err := service.GenerateAccessToken(user.ID, []byte("your_secret_key"))
+
+	resp := models.LoginResponse{
+		Token:     token,
+		TokenType: "Bearer",
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(map[string]string{"message": "Login successful"})
+	err = json.NewEncoder(w).Encode(resp)
 }

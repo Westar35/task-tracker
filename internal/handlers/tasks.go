@@ -113,7 +113,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Вызываем метод, который сохранит задачу в базе данных
-	task, err := h.repo.CreateTask(req.Title, 1) // Здесь 1 - это ID пользователя, который создает задачу. В реальном приложении нужно будет получать его из контекста или сессии.
+	task, err := h.repo.CreateTask(req.Title, 2) // Здесь 1 - это ID пользователя, который создает задачу. В реальном приложении нужно будет получать его из контекста или сессии.
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to create task", http.StatusInternalServerError)

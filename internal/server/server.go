@@ -9,7 +9,7 @@ import (
 	"task-tracker/internal/storage/postgres"
 )
 
-func Run(db *sql.DB) error {
+func Run(jwtSecret []byte, db *sql.DB) error {
 	mux := http.NewServeMux()
 
 	taskRepo := postgres.NewTaskRepository(db)
@@ -17,7 +17,7 @@ func Run(db *sql.DB) error {
 	userRepo := postgres.NewUserRepository(db)
 	authHandler := handlers.NewAuthHandler(userRepo)
 
-	registerRoutes(mux, taskHandler, authHandler)
+	registerRoutes(mux, taskHandler, authHandler, jwtSecret)
 
 	log.Println("Starting server on port :8080")
 

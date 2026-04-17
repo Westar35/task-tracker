@@ -9,6 +9,8 @@ import (
 func main() {
 	dsn := "host=localhost port=5432 user=postgres password=Fgrths197+ dbname=task_tracker sslmode=disable"
 
+	var jwtSecret = []byte("dev-task-tracker-secret-key-2026")
+
 	db, err := postgres.ConnectToDB(dsn)
 	if err != nil {
 		log.Fatal(err)
@@ -20,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = server.Run(db)
+	err = server.Run(jwtSecret, db)
 	if err != nil {
 		log.Fatal(err)
 	}
