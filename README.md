@@ -13,7 +13,7 @@ Invoke-RestMethod -Method GET `
 Invoke-RestMethod -Method PUT `
   -Uri "http://localhost:8080/tasks/1" `
   -ContentType "application/json" `
-  -Body '{"title":"Обновленная задача","done":true}'
+  -Body '{"title":"Обновленная задача","status":true}'
 Удалить задачу
 Invoke-RestMethod -Method DELETE `
   -Uri "http://localhost:8080/tasks/1"

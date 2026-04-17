@@ -14,8 +14,10 @@ func Run(db *sql.DB) error {
 
 	taskRepo := postgres.NewTaskRepository(db)
 	taskHandler := handlers.NewTaskHandler(taskRepo)
+	userRepo := postgres.NewUserRepository(db)
+	authHandler := handlers.NewAuthHandler(userRepo)
 
-	registerRoutes(mux, taskHandler)
+	registerRoutes(mux, taskHandler, authHandler)
 
 	log.Println("Starting server on port :8080")
 
