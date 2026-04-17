@@ -36,17 +36,19 @@ func (r *TaskRepository) GetAllTasks() (map[int]models.Task, error) {
 	return tasks, nil
 }
 
-func (r *TaskRepository) CreateTask(title string) (models.Task, error) {
+func (r *TaskRepository) CreateTask(title string, userID int) (models.Task, error) {
 
 	var task models.Task
 
+	status := false
+
 	query := `
-		INSERT INTO tasks (title, status)
-		VALUES ($1, false)
-		RETURNING id, title, status
+		INSERT INTO tasks (title, status, user_id)
+		VALUES ($1, $2, $3)
+		RETURNING id, title, status, user_id, created_at, updated_at;
 	`
 
-	err := r.db.QueryRow(query, title).Scan(&task.ID, &task.Title, &task.Status)
+	err := r.db.QueryRow(query, title, status, userID).Scan(&task.ID, &task.Title, &task.Status, &task.UserID, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		return models.Task{}, err
 	}

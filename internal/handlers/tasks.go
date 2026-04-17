@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"slices"
 	"task-tracker/internal/models"
+	"task-tracker/internal/service"
 	"task-tracker/internal/storage/postgres"
 )
 
@@ -112,12 +113,20 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Вызываем метод, который сохранит задачу в базе данных
-	task, err := h.repo.CreateTask(req.Title)
+	task, err := h.repo.CreateTask(req.Title, 1) // Здесь 1 - это ID пользователя, который создает задачу. В реальном приложении нужно будет получать его из контекста или сессии.
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to create task", http.StatusInternalServerError)
 		return
 	}
+
+	token, err := service.GenerateAccessToken(1, []byte("your_secret_key"))
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to generate JWT", http.StatusInternalServerError)
+		return
+	}
+	log.Println("Generated JWT:", token)
 
 	// Отправляем успешный ответ
 	w.Header().Set("Content-Type", "application/json")

@@ -17,6 +17,8 @@ func NewAuthHandler(repo *postgres.UserRepository) *AuthHandler {
 	return &AuthHandler{repo: repo}
 }
 
+var jwtSecret = []byte("dev-task-tracker-secret-key-2026")
+
 func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
@@ -109,6 +111,9 @@ func (h *AuthHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
+
+	token, err := service.GenerateAccessToken(user.ID, jwtSecret)
+	log.Println("Generated JWT:", token)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

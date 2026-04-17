@@ -2,10 +2,35 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"task-tracker/internal/storage/postgres"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+type Claims struct {
+	jwt.RegisteredClaims
+}
+
+type AuthService struct {
+	userRepo  *postgres.UserRepository
+	jwtSecret []byte
+}
+
+func NewAuthService(userRepo *postgres.UserRepository, jwtSecret []byte) *AuthService {
+	return &AuthService{
+		userRepo:  userRepo,
+		jwtSecret: jwtSecret,
+	}
+}
+
+func (s *AuthService) GenerateJWT(userID int64) (string, error) {
+	return "", nil
+}
 
 func CheckUserRegisterInput(email, password string) error {
 	if email == "" {
@@ -46,4 +71,18 @@ func ComparePassword(hash, password string) error {
 	}
 
 	return nil
+}
+
+func GenerateAccessToken(userID int64, secret []byte) (string, error) {
+	claims := Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   strconv.FormatInt(userID, 10),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(secret)
 }
