@@ -14,7 +14,9 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(repo *postgres.UserRepository) *AuthHandler {
-	return &AuthHandler{repo: repo}
+	return &AuthHandler{
+		repo: repo,
+	}
 }
 
 func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,4 +121,9 @@ func (h *AuthHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Printf("LoginHandler error: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

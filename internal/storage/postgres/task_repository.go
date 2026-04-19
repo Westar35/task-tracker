@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"task-tracker/internal/models"
 )
 
@@ -13,12 +15,22 @@ func NewTaskRepository(db *sql.DB) *TaskRepository {
 	return &TaskRepository{db: db}
 }
 
-func (r *TaskRepository) GetAllTasks(userID int64) (map[int]models.Task, error) {
+func (r *TaskRepository) GetAllTasks(userID int64) ([]models.TaskWithLocalNumber, error) {
 	// Создаем мапу задач. Ключ - ID задачи, значение - экземпляр структуры Task
-	tasks := make(map[int]models.Task)
+	//tasks := make(map[int]models.TaskWithLocalNumber)
+	tasks := make([]models.TaskWithLocalNumber, 0)
+
+	query := `
+		SELECT
+		id, title, status, user_id, created_at, updated_at,
+		ROW_NUMBER() OVER (ORDER BY id ASC) AS local_number
+		FROM tasks
+		WHERE user_id = $1
+		ORDER BY id ASC
+	`
 
 	// Выполняем SQL-запрос для получения всех задач из базы данных
-	rows, err := r.db.Query("SELECT id, title, status FROM tasks WHERE user_id = $1", userID)
+	rows, err := r.db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -26,17 +38,26 @@ func (r *TaskRepository) GetAllTasks(userID int64) (map[int]models.Task, error) 
 
 	// Проходим по результатам запроса и заполняем мапу задач
 	for rows.Next() {
-		var task models.Task
-		err := rows.Scan(&task.ID, &task.Title, &task.Status)
+		var task models.TaskWithLocalNumber
+		err := rows.Scan(
+			&task.ID,
+			&task.Title,
+			&task.Status,
+			&task.UserID,
+			&task.CreatedAt,
+			&task.UpdatedAt,
+			&task.LocalNumber,
+		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan task: %w", err)
 		}
-		tasks[task.ID] = task
+		tasks = append(tasks, task)
 	}
+	log.Println("Tasks retrieved from database:", tasks)
 	return tasks, nil
 }
 
-func (r *TaskRepository) CreateTask(title string, userID int) (models.Task, error) {
+func (r *TaskRepository) CreateTask(title string, userID int64) (models.Task, error) {
 
 	var task models.Task
 
@@ -56,16 +77,16 @@ func (r *TaskRepository) CreateTask(title string, userID int) (models.Task, erro
 	return task, nil
 }
 
-func (r *TaskRepository) GetTaskByID(id int) (models.Task, error) {
+func (r *TaskRepository) GetTaskByID(id int, userID int64) (models.Task, error) {
 	var task models.Task
 
 	query := `
 		SELECT id, title, status
 		FROM tasks
-		WHERE id = $1
+		WHERE id = $1 AND user_id = $2
 	`
 
-	err := r.db.QueryRow(query, id).Scan(&task.ID, &task.Title, &task.Status)
+	err := r.db.QueryRow(query, id, userID).Scan(&task.ID, &task.Title, &task.Status)
 	if err != nil {
 		return models.Task{}, err
 	}

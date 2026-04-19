@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"slices"
 	"task-tracker/internal/middleware"
 	"task-tracker/internal/models"
-	"task-tracker/internal/service"
 	"task-tracker/internal/storage/postgres"
 )
 
@@ -40,7 +38,7 @@ func (h *TaskHandler) TasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodPost:
-		h.CreateTask(w, r)
+		h.CreateTask(w, r, userID)
 	case http.MethodGet:
 		h.GetAllTasks(w, r, userID)
 	default:
@@ -50,6 +48,12 @@ func (h *TaskHandler) TasksHandler(w http.ResponseWriter, r *http.Request) {
 
 // TasksByIDHandler обрабатывает запросы к эндпоинту /tasks/{id}
 func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		log.Printf("Failed to get user ID from context: %v", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		id, err := getIDFromURL(r.URL.Path)
@@ -57,7 +61,7 @@ func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid task ID", http.StatusBadRequest)
 			return
 		}
-		h.GetTaskByID(id, w, r)
+		h.GetTaskByID(id, w, r, userID)
 	case http.MethodPut:
 		id, err := getIDFromURL(r.URL.Path)
 		if err != nil {
@@ -85,24 +89,26 @@ func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request, userID int64) {
 	tasks, err := h.repo.GetAllTasks(userID)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Failed to sort tasks: %v", err)
 		http.Error(w, "Failed to get tasks", http.StatusInternalServerError)
 		return
 	}
+	response := make([]models.TaskResponse, 0, len(tasks))
+	for _, task := range tasks {
+		response = append(response, models.TaskResponse{
+			Number: task.LocalNumber,
+			Title:  task.Title,
+			Status: task.Status,
+		})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	tasksID := make([]int, 0, len(tasks))
-	for id := range tasks {
-		tasksID = append(tasksID, id)
-	}
-	slices.Sort(tasksID)
-	for _, id := range tasksID {
-		json.NewEncoder(w).Encode(tasks[id])
-	}
+	err = json.NewEncoder(w).Encode(response)
 }
 
 // Метод CreateTask создает новую задачу на основе данных из запроса и сохраняет ее в базе данных
-func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
+func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, userID int64) {
 	// Создаем экземпляр структуры запроса
 	var req models.CreateTaskRequest
 
@@ -120,20 +126,12 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Вызываем метод, который сохранит задачу в базе данных
-	task, err := h.repo.CreateTask(req.Title, 2) // Здесь 1 - это ID пользователя, который создает задачу. В реальном приложении нужно будет получать его из контекста или сессии.
+	task, err := h.repo.CreateTask(req.Title, userID)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to create task", http.StatusInternalServerError)
 		return
 	}
-
-	token, err := service.GenerateAccessToken(1, []byte("your_secret_key"))
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Failed to generate JWT", http.StatusInternalServerError)
-		return
-	}
-	log.Println("Generated JWT:", token)
 
 	// Отправляем успешный ответ
 	w.Header().Set("Content-Type", "application/json")
@@ -150,8 +148,8 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 Методы для TasksByIDHandler
 */
 
-func (h *TaskHandler) GetTaskByID(id int, w http.ResponseWriter, r *http.Request) {
-	task, err := h.repo.GetTaskByID(id)
+func (h *TaskHandler) GetTaskByID(id int, w http.ResponseWriter, r *http.Request, userID int64) {
+	task, err := h.repo.GetTaskByID(id, userID)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Task with current ID not found", http.StatusNotFound)

@@ -32,9 +32,8 @@ func AuthMiddleware(jwtSecret []byte) func(http.Handler) http.Handler {
 				http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
 				return
 			}
-			log.Printf("Received token: %s", parts[1])
+
 			tokenString := parts[1]
-			log.Printf("Parsing token: %s", tokenString)
 
 			claims := &service.Claims{}
 			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {

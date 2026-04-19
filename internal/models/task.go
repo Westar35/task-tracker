@@ -19,3 +19,19 @@ type UpdateTaskRequest struct {
 	Title  string `json:"title"`
 	Status bool   `json:"status"`
 }
+
+type TaskResponse struct {
+	Number int    `json:"number"`
+	Title  string `json:"title"`
+	Status bool   `json:"status"`
+}
+
+type TaskWithLocalNumber struct {
+	ID          int
+	Title       string
+	Status      bool
+	UserID      int64
+	CreatedAt   string
+	UpdatedAt   string
+	LocalNumber int
+}
