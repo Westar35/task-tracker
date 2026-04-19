@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"slices"
+	"task-tracker/internal/middleware"
 	"task-tracker/internal/models"
 	"task-tracker/internal/service"
 	"task-tracker/internal/storage/postgres"
@@ -31,11 +32,17 @@ func getIDFromURL(path string) (int, error) {
 
 // TasksHandler обрабатывает запросы к эндпоинту /tasks
 func (h *TaskHandler) TasksHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserIDFromContext(r.Context())
+	if err != nil {
+		log.Printf("Failed to get user ID from context: %v", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	switch r.Method {
 	case http.MethodPost:
 		h.CreateTask(w, r)
 	case http.MethodGet:
-		h.GetAllTasks(w, r)
+		h.GetAllTasks(w, r, userID)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -75,8 +82,8 @@ func (h *TaskHandler) TasksByIDHandler(w http.ResponseWriter, r *http.Request) {
 */
 
 // Метод GetAllTasks получает все задачи из репозитория и возвращает их в виде JSON-ответа
-func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := h.repo.GetAllTasks()
+func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request, userID int64) {
+	tasks, err := h.repo.GetAllTasks(userID)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to get tasks", http.StatusInternalServerError)

@@ -13,12 +13,12 @@ func NewTaskRepository(db *sql.DB) *TaskRepository {
 	return &TaskRepository{db: db}
 }
 
-func (r *TaskRepository) GetAllTasks() (map[int]models.Task, error) {
+func (r *TaskRepository) GetAllTasks(userID int64) (map[int]models.Task, error) {
 	// Создаем мапу задач. Ключ - ID задачи, значение - экземпляр структуры Task
 	tasks := make(map[int]models.Task)
 
 	// Выполняем SQL-запрос для получения всех задач из базы данных
-	rows, err := r.db.Query("SELECT id, title, status, user_id FROM tasks")
+	rows, err := r.db.Query("SELECT id, title, status FROM tasks WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func (r *TaskRepository) GetAllTasks() (map[int]models.Task, error) {
 	// Проходим по результатам запроса и заполняем мапу задач
 	for rows.Next() {
 		var task models.Task
-		err := rows.Scan(&task.ID, &task.Title, &task.Status, &task.UserID)
+		err := rows.Scan(&task.ID, &task.Title, &task.Status)
 		if err != nil {
 			return nil, err
 		}

@@ -110,7 +110,7 @@ func (h *AuthHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := service.GenerateAccessToken(user.ID, []byte("your_secret_key"))
+	token, err := service.GenerateAccessToken(user.ID, []byte("dev-task-tracker-secret-key-2026"))
 
 	resp := models.LoginResponse{
 		Token:     token,
