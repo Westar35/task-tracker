@@ -96,7 +96,7 @@ func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request, userID
 	response := make([]models.TaskResponse, 0, len(tasks))
 	for _, task := range tasks {
 		response = append(response, models.TaskResponse{
-			Number: task.LocalNumber,
+			ID:     task.ID,
 			Title:  task.Title,
 			Status: task.Status,
 		})

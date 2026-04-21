@@ -21,17 +21,17 @@ type UpdateTaskRequest struct {
 }
 
 type TaskResponse struct {
-	Number int    `json:"number"`
+	ID     int    `json:"id"`
 	Title  string `json:"title"`
 	Status bool   `json:"status"`
 }
 
-type TaskWithLocalNumber struct {
-	ID          int
-	Title       string
-	Status      bool
-	UserID      int64
-	CreatedAt   string
-	UpdatedAt   string
-	LocalNumber int
-}
+// type TaskWithLocalNumber struct {
+// 	ID          int
+// 	Title       string
+// 	Status      bool
+// 	UserID      int64
+// 	CreatedAt   string
+// 	UpdatedAt   string
+// 	LocalNumber int
+// }

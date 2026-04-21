@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"task-tracker/internal/models"
 )
 
@@ -15,18 +14,16 @@ func NewTaskRepository(db *sql.DB) *TaskRepository {
 	return &TaskRepository{db: db}
 }
 
-func (r *TaskRepository) GetAllTasks(userID int64) ([]models.TaskWithLocalNumber, error) {
+func (r *TaskRepository) GetAllTasks(userID int64) ([]models.Task, error) {
 	// Создаем мапу задач. Ключ - ID задачи, значение - экземпляр структуры Task
 	//tasks := make(map[int]models.TaskWithLocalNumber)
-	tasks := make([]models.TaskWithLocalNumber, 0)
+	tasks := make([]models.Task, 0)
 
 	query := `
 		SELECT
-		id, title, status, user_id, created_at, updated_at,
-		ROW_NUMBER() OVER (ORDER BY id ASC) AS local_number
+		id, title, status, user_id, created_at, updated_at
 		FROM tasks
 		WHERE user_id = $1
-		ORDER BY id ASC
 	`
 
 	// Выполняем SQL-запрос для получения всех задач из базы данных
@@ -38,7 +35,7 @@ func (r *TaskRepository) GetAllTasks(userID int64) ([]models.TaskWithLocalNumber
 
 	// Проходим по результатам запроса и заполняем мапу задач
 	for rows.Next() {
-		var task models.TaskWithLocalNumber
+		var task models.Task
 		err := rows.Scan(
 			&task.ID,
 			&task.Title,
@@ -46,14 +43,12 @@ func (r *TaskRepository) GetAllTasks(userID int64) ([]models.TaskWithLocalNumber
 			&task.UserID,
 			&task.CreatedAt,
 			&task.UpdatedAt,
-			&task.LocalNumber,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan task: %w", err)
 		}
 		tasks = append(tasks, task)
 	}
-	log.Println("Tasks retrieved from database:", tasks)
 	return tasks, nil
 }
 
